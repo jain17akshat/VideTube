@@ -15,7 +15,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         return { accessToken, refreshToken }
 
     } catch (error) {
-        throw new ApiError(500, "Something went wrong while generating refresh adn access token")
+        throw new ApiError(500, "Something went wrong while generating refresh and access token")
     }
 }
 
@@ -31,7 +31,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // return res
 
 
-    const { fullName, email, username, password } = req.body
+    const { fullName, email, username, password } = req.body || {};
     //console.log("email: ", email);
 
     if (
@@ -147,8 +147,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1
             }
         },
         {
@@ -158,19 +158,19 @@ const logoutUser = asyncHandler(async (req, res) => {
     )
     const options = {
         httpOnly: true,
-        secure: true,
+        secure: true, 
     }
     return res
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new ApiError(200, {}, "User logged Out"))
+        .json(new ApiResponse(200, {}, "User logged Out"))
 
 })
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     if (!incomingRefreshToken) {
-        new ApiError(401, "unauthorized request")
+     throw   new ApiError(401, "unauthorized request")
 
     }
     try {
@@ -180,7 +180,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
         const user = await User.findById(decodedToken?._id)
         if (!user) {
-            new ApiError(401, "inavalid refresh token")
+      throw      new ApiError(401, "inavalid refresh token")
 
         }
         if (incomingRefreshToken !== user?.refreshToken) {
@@ -349,7 +349,7 @@ const getUserChangeProfile = asyncHandler(async (req, res) => {
 
     const { username } = req.params
 
-    if (!username?.trim) {
+    if (!username?.trim()) {
         throw new ApiError(400, "username is missing")
     }
 
